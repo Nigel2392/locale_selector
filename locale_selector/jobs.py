@@ -1,9 +1,10 @@
-from collections import deque
+from collections import deque, namedtuple
 from wagtail_localize.tasks import BaseJobBackend
 import threading, time, os, logging
 
 from wagtail import hooks
 
+Job = namedtuple("Job", ["func", "args", "kwargs"])
 
 logger = logging.getLogger(__name__)
 _dj_logger = logging.getLogger("django")
@@ -35,21 +36,22 @@ class ThreadedBackend(BaseJobBackend):
         # one of the functions might be lost.
         logger.debug("[ThreadedBackend] Enqueing task %s" % func.__name__)
         with self.lock:
-            self.queue.append(func, args, kwargs)
+            self.queue.append(Job(func, args, kwargs))
 
     def start(self):
         def _run_fn(q: ThreadedBackend, func, args, kwargs):
             logger.debug("[ThreadedBackend] Running task %s" % func.__name__)
             start = time.time()
-
-            page_id, locales, components, user = args
-            for hook in hooks.get_hooks('before_translation_task_run'):
-                hook(page_id=page_id, locales=locales, components=components, user=user)
+            if len(args) == 4:
+                page_id, locales, components, user = args
+                for hook in hooks.get_hooks('before_translation_task_run'):
+                    hook(page_id=page_id, locales=locales, components=components, user=user)
 
             func(*args, **kwargs)
 
-            for hook in hooks.get_hooks('after_translation_task_run'):
-                hook(page_id=page_id, locales=locales, components=components, user=user)
+            if len(args) == 4:
+                for hook in hooks.get_hooks('after_translation_task_run'):
+                    hook(page_id=page_id, locales=locales, components=components, user=user)
 
             end = time.time()
             _dj_logger.info("[ThreadedBackend] Task %s took %s seconds" % (func.__name__, round(end - start, 2)))
