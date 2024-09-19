@@ -71,7 +71,14 @@ def do_locale_selector(context, maintainer: str = None, maintainer_site: str = N
                 cache_key_components,
             ),
         }
-
+    else:
+        page = context["page"]
+        translations = page.get_translations()\
+            .live()\
+            .public()\
+            .specific()
+        context["translations"] = translations
+    
     context["project_maintainer"] = maintainer
     context["project_maintainer_site"] = maintainer_site
     context["show_current_locale_flag"] = current_flag

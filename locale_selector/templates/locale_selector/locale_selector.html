@@ -1,8 +1,7 @@
-{% if page %}
+{% if page and page.live %}
     {% load i18n locale_selector %}
     {% translate "Select a new language" as select_new_lang %}
     {% get_current_language as LANGUAGE_CODE %}
-    {% with translations=page.get_translations.live.public %}
     {% if translations %}
         <div class="locale-selector {% if modal %}modal{%else%}banner{%endif%}{% if sticky %} sticky{% endif %}" role="region" aria-label="{% translate "Language selector" %}">
             <div 
@@ -23,5 +22,4 @@
             </div>
         </div>
     {% endif %}
-    {% endwith %}
 {% endif %}
